@@ -1,0 +1,95 @@
+# https://docs.docker.com/compose/
+# https://docs.docker.com/compose/gettingstarted/
+
+version: '3.8'
+
+services:
+  vprodb:
+  # this must be the name of the container. See the application.properties note below
+    # build: .
+    build:
+      context: ./Docker-files/db
+    image: dave123456789/vprofiledb
+    # this image name must be the same name as used in dmastrop/repo on dockerhub  
+    container_name: vprodb
+    ports:
+      - "3306:3306"
+    volumes:
+      #- .:/code
+      - vprodbdata:/var/lib/mysql
+      #the local volume needs to be created
+    environment:
+      #FLASK_DEBUG: "true"
+      - MYSQL_ROOT_PASSWORD=vprodbpass
+      # much of this information is in the source code for the vprofile app in src/main/resources/application.properties file
+      # for example, jdbc.password=vprodbpass
+
+
+  #redis:
+  #  image: "redis:alpine"
+
+
+  vprocache01:
+    image: memcached
+    # we can use the stock image from dockerhub
+    ports:
+      - "11211:11211"
+
+  vpromq01:
+    image: rabbitmq
+    # we can use the stock image from dockerhub
+    ports:
+      - "15672:15672"
+    environment: 
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
+
+
+  vproapp:
+  # this must be the name of the container. See the application.properties 
+    # build: .
+    build:
+      context: ./Docker-files/app
+    image: dave123456789/vprofileapp
+    # this image name must be the same name as used in dmastrop/repo on dockerhub  
+    container_name: vproapp
+    ports:
+      - "8080:8080"
+    volumes:
+      #- .:/code
+      - vproappdata:/usr/local/tomcat/webapps
+      # the local volume needs to be created
+    #environment:
+      #FLASK_DEBUG: "true"
+      #- MYSQL_ROOT_PASSWORD=vprodbpass
+      # much of this information is in the source code for the vprofile app in src/main/resources/application.properties file
+      # for example, jdbc.password=vprodbpass
+
+
+  vproweb:
+    # this must be the name of the container. See the application.properties 
+      # build: .
+      build:
+        context: ./Docker-files/web
+      image: dave123456789/vprofileweb
+      # this image name must be the same name as used in dmastrop/repo on dockerhub  
+      container_name: vproweb
+      ports:
+        - "80:80"
+      #volumes:
+        #- .:/code
+        #- vproappdata:/usr/local/tomcat/webapps
+        # the local volume needs to be created
+      #environment:
+        #FLASK_DEBUG: "true"
+        #- MYSQL_ROOT_PASSWORD=vprodbpass
+        # much of this information is in the source code for the vprofile app in src/main/resources/application.properties file
+        # for example, jdbc.password=vprodbpass
+
+
+# next need to create the two volumes above
+volumes:
+  vprodbdata: {}
+  # create the volume in the docker engine itself. The volumnes will be created when the respective
+  # containers are built
+  vproappdata: {}
