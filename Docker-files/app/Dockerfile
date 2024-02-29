@@ -1,3 +1,4 @@
+# Stage1: This creates a docker image just to build the artifact (.war file) for the vprofile application
 FROM openjdk:11 AS BUILD_IMAGE
 # first image will be used to build the vprofile artifact .war file, etc....
 # The name of this image is BUILD_IMAGE and will be referenced in tomcat state2 below.
@@ -6,6 +7,15 @@ RUN apt update && apt install maven -y
 # this will install maven on this first docker build that has jdk.
 #  this openjdk is debian  so apt is the command for loading the packages
 RUN git clone https://github.com/devopshydclub/vprofile-project.git
+# An alternative to clone is to mount the repo
+#  For example:
+# 
+#ADD ../../ vprofile-project
+# This creates a mount of the local vprofile-project workspace
+# then:
+#RUN cd vprofile-project && mvn install
+
+
 RUN cd vprofile-project && git checkout docker && mvn install
 # this will generate the vprofile artifact on the docker instance. In the vprofile-project folder
 # there will be the usual target folder that has the .war artifact
@@ -13,6 +23,11 @@ RUN cd vprofile-project && git checkout docker && mvn install
 # below, this instance can be discarded
 
 
+
+
+# Stage2: We can use the .war artifact created above in our final docker app image so that the tomcat has
+# the vprofile application installed on the default directory of tomcat
+# Note the COPY --from=BUILD_IMAGE below. BUILD_IMAGE is the Stage1 image above with the .war file on it.
 FROM tomcat:9-jre11
 
 LABEL "Project"="Vprofile"
